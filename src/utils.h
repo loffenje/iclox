@@ -1,14 +1,7 @@
-#include <stdbool.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <stddef.h>
-#include <assert.h>
-#include <stdint.h>
+#ifndef UTILS_H_
+#define UTILS_H_
 
-#ifndef _UTILS_H_
-#define _UTILS_H_
+#include "memory.h"
 
 #define DEFAULT_CAPACITY 16
 
@@ -54,8 +47,12 @@ bool vect_contains(vect *v, void *item);
 void vect_pushi_back(vect *v, int item);
 void vect_free(vect *v);
 
+void die(char *msg);
+
 void *xmalloc(size_t size);
 void *xcalloc(size_t n, size_t size);
+
+void report(const char *fmt, ...);
 
 static unsigned long crc32_tab[] = {
     0x00000000L, 0x77073096L, 0xee0e612cL, 0x990951baL, 0x076dc419L,

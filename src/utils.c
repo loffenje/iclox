@@ -1,11 +1,27 @@
+#include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <stddef.h>
+#include <assert.h>
+#include <stdint.h>
+#include <stdarg.h>
 #include "utils.h"
+
+/**** common utils ****/
+
+void die(char *msg)
+{
+    perror(msg);
+    exit(EXIT_FAILURE);
+}
 
 void *xmalloc(size_t size)
 {
     void *ret = malloc(size);
     if (!ret) {
-        perror("xmalloc failed");
-        exit(EXIT_FAILURE);
+        die("xmalloc failed");
     }
 
     return ret;
@@ -15,18 +31,39 @@ void *xcalloc(size_t n, size_t size)
 {
     void *ret = calloc(n, size);
     if (!ret) {
-        perror("xcalloc failed");
-        exit(EXIT_FAILURE);
+        die("xcalloc failed");
     }
 
     return ret;
 }
 
-/**
- * 
- * Funny dynamic
- * 
- * */
+void report(const char *fmt, ...) 
+{
+    va_list args;
+    va_start(args, fmt);
+
+    while (*fmt != '\0') {
+
+        if (*fmt == 'l') {
+            int line = va_arg(args, int);
+            printf("Line: %d\n", line);
+        } else if (*fmt == 'x') {
+            char *ux = va_arg(args, char*);
+            printf("Error: Unexpected %s in argument list", ux);
+        } else if (*fmt == 't') {
+            char token = va_arg(args, int);
+            printf("Error: Unexpected token %c", token);
+        }
+
+        ++fmt;
+    }
+
+    va_end(args);
+} 
+// end common
+
+
+/**** vect implementation ****/
 
 void *vect_new()
 {
@@ -104,13 +141,12 @@ void vect_free(vect *v)
 void vect_pushi_back(vect *v, int item)
 {
    vect_push_back(v, (void *)(intptr_t)item);
-}
+} 
 
-/**
- * 
- *  Funny Hashmap 
- * 
- **/
+// end vect
+
+
+/****  hashmap implementation ****/
 
 static unsigned long crc32(const unsigned char *s, unsigned int len)
 {
@@ -289,4 +325,4 @@ void map_destroy(map *m)
 {
     free(m->buckets);
     free(m);
-}
+} // end hashmap
