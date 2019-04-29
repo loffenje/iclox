@@ -7,7 +7,7 @@ typedef void *Object;
 
 typedef enum TokenType_t {
   // Single-character tokens.                      
-  LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE,
+  LEFT_PARENT, RIGHT_PARENT, LEFT_BRACE, RIGHT_BRACE,
   COMMA, DOT, MINUS, PLUS, SEMICOLON, SLASH, STAR, 
 
   // One or two character tokens.                  
@@ -25,6 +25,7 @@ typedef enum TokenType_t {
 } TokenType;
 
 typedef struct Token_t {
+  double number;
   TokenType type;
   char *lexeme;
   Object literal;
@@ -43,8 +44,9 @@ typedef struct Scanner_t {
 extern Scanner *scanner;
 extern map *keywords;
 
-Scanner *new_scanner();
-Token *new_token(TokenType type, char *lexeme, Object literal, int line);
+Scanner *scanner_new_scanner();
+Token *scanner_new_token(TokenType type, char *lexeme, Object literal, int line);
+Token *scanner_new_atomic_token(TokenType type, char *lexeme, int line);
 void scanner_add__token(TokenType type, Object literal);
 void scanner_add_token(TokenType type);
 void scanner_add_token2(TokenType type, Object literal);

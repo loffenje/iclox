@@ -1,6 +1,16 @@
 #ifndef UTILS_H_
 #define UTILS_H_
 
+#include <stdlib.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <stddef.h>
+#include <assert.h>
+#include <stdint.h>
+#include <stdarg.h>
+#include <stdbool.h>
+
 #include "memory.h"
 
 #define DEFAULT_CAPACITY 16
@@ -13,6 +23,8 @@
 #define MAX_CHAIN_LENGTH 8
 
 #define INITIAL_SIZE (256)
+
+#define MAX(a,b) ((a) < (b) ? (b) : (a))
 
 typedef int (*func)(void *, void *);
 

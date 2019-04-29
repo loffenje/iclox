@@ -8,7 +8,7 @@ Scanner *scanner;
 
 map *keywords;
 
-Scanner *new_scanner()
+Scanner *scanner_new_scanner()
 {
     scanner = xmalloc(sizeof(Scanner));
     scanner->tokens = vect_alloc(sizeof(Token));
@@ -19,10 +19,11 @@ Scanner *new_scanner()
     return scanner;
 }
 
-Token *new_token(TokenType type, char *lexeme, Object literal, int line)
+Token *scanner_new_token(TokenType type, char *lexeme, Object literal, int line)
 {    
     Token *token;
-    token = xmalloc(sizeof(Token));
+    token = xmalloc(sizeof(Token));\
+
     token->type = type;
     token->lexeme = strdup(lexeme);
     token->literal = literal;
@@ -33,6 +34,18 @@ Token *new_token(TokenType type, char *lexeme, Object literal, int line)
     return token;
 }
 
+Token *scanner_new_atomic_token(TokenType type, char *lexeme, int line)
+{    
+    Token *token;
+    token = xmalloc(sizeof(Token));
+
+    token->type = type;
+    token->lexeme = strdup(lexeme);
+    token->literal = NULL;
+    token->line = line;
+
+    return token;
+}
 
 static inline bool is_at_end()
 {
@@ -48,7 +61,7 @@ static inline char next_token()
 void scanner_add__token(TokenType type, Object literal)
 {
     char *substr = scanner_substring(scanner->start, scanner->current);
-    Token *token = new_token(type, substr, literal, scanner->line);
+    Token *token = scanner_new_token(type, substr, literal, scanner->line);
 
     vect_push_back(scanner->tokens, token);
 }
@@ -163,8 +176,8 @@ void scanner_scan_token()
 {
     char c = next_token();
     switch(c) {
-      case '(': scanner_add_token(LEFT_PAREN); break;     
-      case ')': scanner_add_token(RIGHT_PAREN); break;    
+      case '(': scanner_add_token(LEFT_PARENT); break;     
+      case ')': scanner_add_token(RIGHT_PARENT); break;    
       case '{': scanner_add_token(LEFT_BRACE); break;     
       case '}': scanner_add_token(RIGHT_BRACE); break;    
       case ',': scanner_add_token(COMMA); break;          

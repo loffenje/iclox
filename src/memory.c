@@ -1,180 +1,84 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <sys/mman.h>
-#include <pthread.h>
-#include <assert.h>
-#include <unistd.h>
 #include <string.h>
+#include <stdlib.h>
+
 #include "memory.h"
+#include "utils.h"
 
-
-void *glob_base_ptr = NULL;
-pthread_mutex_t memorylock = PTHREAD_MUTEX_INITIALIZER;
-
-static int page_size = -1;
-static int page_count = 16;
-
-static memory_block *find_free_block(memory_block **last, size_t size) {
-    memory_block *curr = glob_base_ptr;
-    while (curr && !(curr->_free && curr->size >= size)) {
-        *last = curr;
-        curr = curr->next;
-    }
-
-    return curr;
-}
-
-static memory_block *map_block(memory_block *last, size_t size) {
-    memory_block *block;
-    char *p = MMAP(size);
-    if (p == MAP_FAILED) {
-        return NULL;
-    }
-
-    if (mprotect(p, size, PROT_READ | PROT_WRITE) != 0) {
-        munmap(p, size);
-        return NULL;
-    }
-
-    block = (memory_block *)p;
-    if (last) {
-        last->next = block;
-    }
-
-    block->size = size;
-    block->_free = 0;
-    block->next = NULL;
-
-    return block;
-}
-
-
-void *memory_malloc(size_t size) {
-    if (size <= 0) {
-        return NULL;
-    }
-
-    MLOCK();
-
-    memory_block *block;
-    size_t asize, total_size;
-    int alloc_size = 0, pages = 0;
-
-    asize = MAX(ALIGN(size), MINIMUM);
-
-    if (asize < PAGE_SIZE) {
-        alloc_size = asize;
-    } else {
-        total_size = asize + MEM_BLOCK_SIZE;
-        pages = total_size / PAGE_SIZE;
-        if ((pages % PAGE_SIZE) != 0) pages += 1;
-        if (pages < page_count) pages = page_count;
-        alloc_size = memory_pagesize(pages);
-    }
-
-    if (!glob_base_ptr) {
-        block = map_block(NULL, alloc_size);
-        if (!block) {
-            MUNLOCK();
-            return NULL;
-        }
-
-        glob_base_ptr = block;
-    } else {
-        memory_block *last = glob_base_ptr;
-        block = find_free_block(&last, alloc_size);
-        if (!block) {
-            block = map_block(last, alloc_size);
-            if (!block) {
-                MUNLOCK();
-                return NULL;
-            }
-        } else {
-            block->_free = 0;
-        }
-    }
-
-    MUNLOCK();
-
-    return block + 1;
-}
-
-void *memory_realloc(void *ptr, size_t size)
+void memory_pool_init(memory_pool *mp, const uint32_t elem_size, const uint32_t block_size)
 {
-    size_t asize, total_size;
-    int pages = 0, alloc_size = 0;
+    uint32_t i;
 
-    if (!ptr) {
-        return memory_malloc(size);
-    }
+    mp->elem_size = MAX(elem_size, sizeof(memory_pool_freed));
+    mp->block_size = block_size;
 
-    asize = MAX(ALIGN(size), MINIMUM);
+    memory_pool_free_all(mp);
 
-    if (asize >= PAGE_SIZE) {
-        total_size = asize + MEM_BLOCK_SIZE;
-        pages = total_size / PAGE_SIZE;
-        if ((pages % PAGE_SIZE) != 0) pages += 1;
-        if (pages < page_count) pages = page_count;
-        alloc_size = memory_pagesize(pages);
-    } else {
-        alloc_size = asize;
-    }
+    mp->blocks_used = POOL_BLOCKS_INITIAL;
+    mp->blocks = xmalloc(sizeof(uint8_t*)* mp->blocks_used);
 
-    memory_block *block = (memory_block *)ptr - 1;
-
-    if (block->size >= alloc_size) {
-        return ptr;
-    }
-
-    void *new_ptr;
-    new_ptr = memory_malloc(size);
-    if (!new_ptr) {
-        return NULL;
-    }
-
-
-    memcpy(new_ptr, ptr, block->size);
-    free(ptr);
-
-
-    return new_ptr;
+    for (i = 0; i < mp->blocks_used; ++i)
+        mp->blocks[i] = NULL;
 }
 
-void *memory_calloc(size_t num, size_t nsize) {
-    size_t size;
-    void *ptr;
-    if (!num || !nsize) {
-        return NULL;
+void memory_pool_destroy(memory_pool *mp)
+{
+    uint32_t i;
+    for (i = 0; i < mp->blocks_used; ++i) {
+        if (mp->blocks[i] == NULL)
+            break;
+        else
+            free(mp->blocks);
     }
-
-    size = num * nsize;
-    ptr = malloc(size);
-    if (!ptr) {
-        return NULL;
-    }
-
-    memset(ptr, 0, size);
-
-    return ptr;
 }
 
-size_t memory_pagesize(size_t pages) {
-    if (page_size < 0) page_size = getpagesize();
-
-    return page_size * pages;
+void *memory_pool_alloc_arena(memory_pool *mp, size_t size)
+{
+    if (mp->blocks_used != POOL_BLOCKS_INITIAL) {
+        enum {DEFAULT_BLOCK = 8};
+        memory_pool_init(mp, size, DEFAULT_BLOCK);
+    }
+    
+    return memory_pool_alloc(mp);
 }
 
-void memory_free(void *ptr) {
-    if (!ptr) return;
+void *memory_pool_alloc(memory_pool *mp)
+{
+    if (mp->freed != NULL) {
+        void *recycle = mp->freed;
+        mp->freed = mp->freed->next;
 
-    memory_block *block = (memory_block *)ptr - 1;
-    size_t pages = block->size / PAGE_SIZE;
+        return recycle;
+    }
 
-	if ((pages % PAGE_SIZE) != 0) pages += 1;
-	if (pages < PAGE_SIZE) pages = page_count;
+    if (++mp->used == mp->block_size) {
+        mp->used = 0;
+        if (++mp->block == (int32_t)mp->blocks_used) {
+            uint32_t i;
+            mp->blocks_used <<= 1;
+            mp->blocks = realloc(mp->blocks, sizeof(uint8_t *) * mp->blocks_used);
 
-    munmap(ptr, pages * page_size);
+            for (i = mp->blocks_used >> 1; i < mp->blocks_used; ++i)
+                mp->blocks[i] = NULL;
+        }
 
-    assert(block->_free == 0);
-    block->_free = 1;
+        if (mp->blocks[mp->block] == NULL)
+            mp->blocks[mp->block] = malloc(mp->elem_size * mp->block_size);
+    }
+
+    return mp->blocks[mp->block] + mp->used * mp->elem_size;
+}
+
+void memory_pool_free(memory_pool *mp, void *ptr)
+{
+    memory_pool_freed *mp_freed = mp->freed;
+
+    mp->freed = ptr;
+    mp->freed->next = mp_freed;
+}
+
+void memory_pool_free_all(memory_pool *mp)
+{
+    mp->used = mp->block_size - 1;
+    mp->block = -1;
+    mp->freed = NULL;
 }

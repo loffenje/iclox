@@ -6,6 +6,7 @@
 #include <assert.h>
 #include "scanner.h"
 #include "utils.h"
+#include "expr.h"
 
 #define DEBUG
 
@@ -92,7 +93,7 @@ void run_prompt()
 void test_scanner()
 {
     init_keywords();
-    scanner = new_scanner();
+    scanner = scanner_new_scanner();
     assert(scanner);
     scanner->source = "if(1){print(\"d\");return true;}";
     vect *tokens = scanner_scan_tokens();
@@ -113,6 +114,8 @@ int main(int argc, char **argv)
         printf("Usage: lox [script]\n");
         #ifdef DEBUG
         test_scanner();
+        Expr *expr = test_expr();
+        printf("%s\n", (char *)expr->binary.operator);
         #endif
     } else if (argc == 2) {
         run_file(argv[1]);

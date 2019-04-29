@@ -1,48 +1,29 @@
 #ifndef MEMORY_H
 #define MEMORY_H
 
-#include <pthread.h>
+#define POOL_BLOCKS_INITIAL 1
 
-#define ALIGNMENT 8
-#define PAGE_SIZE (1 << 12)
-#define MINIMUM  24  /* minimum block size */
+typedef struct memory_pool_freed_t {
+    struct memory_pool_freed_t *next;
+} memory_pool_freed;
 
-#define MAX(x,y) ((x) > (y) ? (x) : (y))
-#define ALIGN(p) (((size_t)(p) + (ALIGNMENT-1)) & ~0x7)
-#define MMAP(sz) mmap(NULL, (size_t)(sz), PROT_READ | PROT_WRITE, \
-    MAP_ANON | MAP_PRIVATE, -1, (off_t) 0)
+typedef struct memory_pool_t {
+    uint32_t elem_size;
+    uint32_t block_size;
+    uint32_t used;
+    int32_t block;
+    memory_pool_freed *freed;
+    uint32_t blocks_used;
+    uint8_t **blocks;
+} memory_pool;
 
-#define malloc memory_malloc
-#define realloc memory_realloc
-#define calloc memory_calloc
-#define free memory_free
+void memory_pool_init(memory_pool *mp, const uint32_t elem_size, const uint32_t block_size);
+void memory_pool_destroy(memory_pool *mp);
 
-typedef struct memory_block_t {
-    size_t size;
-    struct memory_block_t *next;
-    int _free;
-} memory_block;
+void *memory_pool_alloc(memory_pool *mp);
+void *memory_pool_alloc_arena(memory_pool *mp, size_t size);
+void memory_pool_free(memory_pool *mp, void *ptr);
 
-#define MEM_BLOCK_SIZE sizeof(memory_block)
-
-extern void *glob_base_ptr;
-extern pthread_mutex_t memorylock;
-
-
-#define MLOCK(void) do { \
-    pthread_mutex_lock(&memorylock); \
-} while(0)
-
-#define MUNLOCK(void) do { \
-    pthread_mutex_unlock(&memorylock); \
-} while(0)
-
-
-void *memory_malloc(size_t size);
-void *memory_realloc(void *ptr, size_t size);
-void *memory_calloc(size_t num, size_t nsize);
-void memory_free(void *ptr);
-
-size_t memory_pagesize(size_t pages);
+void memory_pool_free_all(memory_pool *mp);
 
 #endif
