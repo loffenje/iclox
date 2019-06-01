@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stdarg.h>
 #include <assert.h>
+#include "parser.h"
 #include "scanner.h"
 #include "utils.h"
 #include "expr.h"
@@ -41,6 +42,7 @@ static void run(char *source)
     printf("%s\n", source);
 }
 
+__unused
 static void run_file(char *source)
 {
     FILE *stream;
@@ -89,36 +91,32 @@ void run_prompt()
     } while(true);
 }
 
-/**** temporary test section ****/
-void test_scanner()
+void run_test()
 {
     init_keywords();
     scanner = scanner_new_scanner();
-    assert(scanner);
     scanner->source = "if(1){print(\"d\");return true;}";
     vect *tokens = scanner_scan_tokens();
-    for (int i = 0; i < vect_len(tokens); i++) {
-        Token *token = (Token *)vect_pop_back(tokens);
-        printf("Lexeme: %s\n", token->lexeme);
-    }
+    parser = parser_new_parser(tokens);
+    Expr *expr = parser_parse();
 
-    printf("Assertion ok\n");
+    if (hadError) return;
+    
+    printf("%s",expr->binary.operator->literal);
 }
-
 // end test
-
 
 int main(int argc, char **argv) 
 {
-    if (argc > 2) {
+    if (argc == 2) {
         printf("Usage: lox [script]\n");
         #ifdef DEBUG
-        test_scanner();
+        run_test();
         Expr *expr = test_expr();
         printf("%s\n", (char *)expr->binary.operator);
-        #endif
-    } else if (argc == 2) {
+        #else
         run_file(argv[1]);
+        #endif
     } else {
         run_prompt();
     }

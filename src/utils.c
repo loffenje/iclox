@@ -29,6 +29,7 @@ void *xcalloc(size_t n, size_t size)
     return ret;
 }
 
+
 void report(const char *fmt, ...) 
 {
     va_list args;
@@ -38,13 +39,16 @@ void report(const char *fmt, ...)
 
         if (*fmt == 'l') {
             int line = va_arg(args, int);
-            printf("Line: %d\n", line);
+            printf("Line: %d ", line);
         } else if (*fmt == 'x') {
             char *ux = va_arg(args, char*);
             printf("Error: Unexpected %s in argument list", ux);
         } else if (*fmt == 't') {
             char token = va_arg(args, int);
             printf("Error: Unexpected token %c", token);
+        } else if (*fmt == 's') {
+            char *m = va_arg(args, char *);
+            printf("%s\n", m);
         }
 
         ++fmt;
@@ -121,6 +125,26 @@ bool vect_contains(vect *v, void *item)
    }
 
    return false;
+}
+
+void *vect_at(vect *v, int index)
+{
+    return v->data[index];
+}
+
+void *vect_begin(vect *v) 
+{
+    return v->data;
+}
+
+void *vect_end(vect *v)
+{
+    return v->data[v->len];
+}
+
+void vect_next(vect *v)
+{
+    v->data++;
 }
 
 void vect_free(vect *v)

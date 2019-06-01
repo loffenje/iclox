@@ -1,10 +1,11 @@
 #ifndef EXPR_H
 #define EXPR_H
 
-#include "scanner.h"
+#include <stdbool.h>
+
+#include "token.h"
 
 typedef struct Expr Expr;
-
 
 typedef enum ExprKind {
     ASSIGN,

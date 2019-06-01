@@ -1,6 +1,6 @@
 #include "expr.h"
 #include "memory.h"
-#include "scanner.h"
+#include "token.h"
 
 memory_pool pool;
 
@@ -92,10 +92,10 @@ Expr *test_expr()
 {
     Expr *e = expr_new_binary(
         expr_new_unary(
-            scanner_new_atomic_token(MINUS, "-", 1),
+            token_new_atomic_token(MINUS, "-", 1),
             expr_new_number_literal(123)
         ),
-        scanner_new_atomic_token(STAR, "*", 1),
+        token_new_atomic_token(STAR, "*", 1),
         expr_new_grouping(expr_new_number_literal(12.33))
     );
 

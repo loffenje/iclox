@@ -28,6 +28,8 @@
 
 typedef int (*func)(void *, void *);
 
+typedef void* Object;
+
 typedef struct map_bucket_t {
     void *key;
     void *val;
@@ -50,9 +52,15 @@ typedef struct vect_t {
 void *vect_new();
 void *vect_alloc(size_t size);
 void vect_resize(vect *v, size_t size);
+void *vect_at(vect *v, int index);
 void vect_shrink_to_fit(vect *v);
 size_t vect_size(vect *v);
 size_t vect_len(vect *v);
+
+void *vect_begin(vect *v);
+void *vect_end(vect *v);
+void vect_next(vect *v);
+
 void vect_push_back(vect *v, void *item);
 void *vect_pop_back(vect *v);
 bool vect_contains(vect *v, void *item);

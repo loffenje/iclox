@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "scanner.h"
+#include "token.h"
 
 Scanner *scanner;
 
@@ -19,34 +20,6 @@ Scanner *scanner_new_scanner()
     return scanner;
 }
 
-Token *scanner_new_token(TokenType type, char *lexeme, Object literal, int line)
-{    
-    Token *token;
-    token = xmalloc(sizeof(Token));\
-
-    token->type = type;
-    token->lexeme = strdup(lexeme);
-    token->literal = literal;
-    token->line = line;
-
-    free(lexeme);
-
-    return token;
-}
-
-Token *scanner_new_atomic_token(TokenType type, char *lexeme, int line)
-{    
-    Token *token;
-    token = xmalloc(sizeof(Token));
-
-    token->type = type;
-    token->lexeme = strdup(lexeme);
-    token->literal = NULL;
-    token->line = line;
-
-    return token;
-}
-
 static inline bool is_at_end()
 {
     return scanner->current >= strlen(scanner->source);
@@ -61,7 +34,7 @@ static inline char next_token()
 void scanner_add__token(TokenType type, Object literal)
 {
     char *substr = scanner_substring(scanner->start, scanner->current);
-    Token *token = scanner_new_token(type, substr, literal, scanner->line);
+    Token *token = token_new_token(type, substr, literal, scanner->line);
 
     vect_push_back(scanner->tokens, token);
 }
@@ -226,7 +199,7 @@ vect *scanner_scan_tokens()
 
     Token *token;
     token = xmalloc(sizeof(Token));
-    token->type = EOF;
+    token->type = _EOF;
     token->lexeme = "";
     token->literal = NULL;
     token->line = scanner->line;
