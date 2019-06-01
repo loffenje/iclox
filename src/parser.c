@@ -19,31 +19,31 @@ Parser *parser_new_parser(vect *tokens)
    return parser;
 }
 
-static Token *peek()
+static inline Token *peek()
 {
     return vect_at(parser->tokens, parser->current);
 }
 
-static Token *previous()
+static inline Token *previous()
 {
     return vect_at(parser->tokens, parser->current - 1);
 }
 
-static bool is_at_end()
+static inline bool is_at_end()
 {
     Token *token = peek();
 
     return token->type == _EOF;
 }
 
-static Token *advance() 
+static inline Token *advance() 
 {
     if (!is_at_end()) parser->current++;
 
     return previous();
 }
 
-static bool check(TokenType t) 
+static inline bool check(TokenType t) 
 {
     if (!is_at_end()) parser->current++;
     Token *token = previous();
@@ -87,7 +87,7 @@ static void syntax_error(Token *token, const char *message)
     die("runtime error");
 }
 
-static Token *consume(TokenType type, char *message)
+static inline Token *consume(TokenType type, char *message)
 {
     if (check(type)) return advance();
     
