@@ -5,7 +5,7 @@
 
 typedef enum TokenType_t {
   // Single-character tokens.                      
-  LEFT_PARENT = 127, RIGHT_PARENT, LEFT_BRACE, RIGHT_BRACE,
+  LEFT_PARENT, RIGHT_PARENT, LEFT_BRACE, RIGHT_BRACE,
   COMMA, DOT, MINUS, PLUS, SEMICOLON, SLASH, STAR, 
 
   // One or two character tokens.                  
@@ -35,5 +35,7 @@ typedef struct Token_t {
 
 Token *token_new_token(TokenType type, char *lexeme, Object literal, int line);
 Token *token_new_atomic_token(TokenType type, char *lexeme, int line);
+
+Token *token_new_bool_token(TokenType type, char *lexeme, bool literal, int line);
 
 #endif

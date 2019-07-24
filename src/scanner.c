@@ -98,7 +98,6 @@ void scanner_identifier()
 
     char *substr = scanner_substring(scanner->start, scanner->current);
     TokenType type = (intptr_t)map_get(keywords, substr);
-    printf("DEBUG %d with %s\n", type, substr);
     if (type == 0) {
         scanner_add_token(IDENTIFIER);
     } else {

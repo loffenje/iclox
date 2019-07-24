@@ -42,7 +42,7 @@ static void run(char *source)
     printf("%s\n", source);
 }
 
-__unused
+/*
 static void run_file(char *source)
 {
     FILE *stream;
@@ -70,7 +70,7 @@ static void run_file(char *source)
     fclose(stream);
 
     if (hadError) exit(EXIT_FAILURE);
-}
+}*/
 
 static ssize_t read_line(char **source)
 {
@@ -95,14 +95,14 @@ void run_test()
 {
     init_keywords();
     scanner = scanner_new_scanner();
-    scanner->source = "if(1){print(\"d\");return true;}";
+    scanner->source = "false==false";
     vect *tokens = scanner_scan_tokens();
     parser = parser_new_parser(tokens);
     Expr *expr = parser_parse();
 
     if (hadError) return;
     
-    printf("%s",expr->binary.operator->literal);
+    printf("%s",expr->literal.value.lexeme);
 }
 // end test
 

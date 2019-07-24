@@ -15,6 +15,7 @@ Parser *parser_new_parser(vect *tokens)
 {
    parser = xmalloc(sizeof(Parser));
    parser->tokens = tokens;
+   parser->current = 0;
 
    return parser;
 }
@@ -59,8 +60,8 @@ static bool match(int n, ...)
     va_list l;
     va_start(l, n);
     for (int i = 0; i < n; i++) {
-        TokenType t = va_arg(l, TokenType);
-        if (check(t)) {
+        TokenType t = (TokenType) n;
+    	if (check(t)) {
             advance();
 
             return true;
@@ -101,15 +102,15 @@ static Expr *primary()
 {
 
     if (match(FALSE)) {
-            bool literal = false;
-            Token *token = token_new_token(FALSE, NULL, &literal, 0);
-            return expr_new_literal(token);
+         Token *token = token_new_bool_token(FALSE, "false", false, 0);
+         
+	 return expr_new_literal(token);
     } 
 
     if (match(TRUE)) {
-            bool literal = true;
-            Token *token = token_new_token(TRUE, NULL, &literal, 0);
-            return expr_new_literal(token);
+         Token *token = token_new_bool_token(TRUE, "true", true, 0);
+         
+	 return expr_new_literal(token);
     } 
 
     if (match(NIL)) return expr_new_literal(NULL);
@@ -195,7 +196,7 @@ static Expr *equality()
     Expr *expr = comparisson();
 
     while (match(BANG_EQUAL, EQUAL_EQUAL)) {
-        Token *operator = previous(); 
+   	Token *operator = previous(); 
         Expr *right = comparisson();
         expr = expr_new_binary(expr, operator, right);
     }
